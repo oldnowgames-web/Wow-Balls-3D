@@ -43,12 +43,6 @@
     .pop-anim { animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
     @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.4); color: #ffd700; text-shadow: 0 0 20px #ffd700; } 100% { transform: scale(1); } }
 
-    #ui-controls { position: absolute; bottom: max(20px, env(safe-area-inset-bottom)); left: 0; width: 100%; padding: 0 15px; display: flex; justify-content: space-between; align-items: flex-end; z-index: 10; }
-    .dir-controls { display: flex; gap: 10px; }
-    .btn-ctrl { width: 65px; height: 65px; background: rgba(255, 255, 255, 0.1); border: 2px solid rgba(255,255,255,0.5); border-radius: 16px; color: white; font-size: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(4px); box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-    .btn-ctrl:active { background: rgba(255, 255, 255, 0.4); transform: translateY(2px); }
-    .jump-btn { border-radius: 50%; width: 75px; height: 75px; font-size: 28px; background: rgba(0, 210, 211, 0.15); border-color: rgba(0, 210, 211, 0.7); }
-
     .lobby-btns { position: absolute; width: 100%; height: 100%; pointer-events: none; }
     #btn-lobby-skin { pointer-events: auto; position: absolute; bottom: max(20px, env(safe-area-inset-bottom)); left: 20px; }
     #btn-lobby-play { pointer-events: auto; position: absolute; bottom: max(20px, env(safe-area-inset-bottom)); right: 20px; }
@@ -100,14 +94,6 @@
     <div id="score">DIST: 0m</div>
     <div id="coins-count">🪙 0</div>
     <div id="status-effects"></div>
-  </div>
-
-  <div id="ui-controls" class="hidden">
-    <div class="dir-controls">
-      <div id="btn-left" class="btn-ctrl">◀</div>
-      <div id="btn-right" class="btn-ctrl">▶</div>
-    </div>
-    <div id="btn-jump" class="btn-ctrl jump-btn">▲</div>
   </div>
 
   <div id="game-container"></div>
@@ -360,7 +346,6 @@
       saveData();
       
       document.getElementById('ui').classList.add('hidden');
-      document.getElementById('ui-controls').classList.add('hidden');
       document.getElementById('lobby-screen').classList.remove('hidden');
       currentState = STATES.LOBBY;
     }
@@ -491,7 +476,7 @@
 
     function startPlay() {
       initAudio(); document.getElementById('lobby-screen').classList.add('hidden');
-      document.getElementById('ui').classList.remove('hidden'); document.getElementById('ui-controls').classList.remove('hidden');
+      document.getElementById('ui').classList.remove('hidden');
       playerPos.set(0, 2, 0); playerVelY = 0; hasShield = false; hasMagnet = false; superJumpTimer = 0; boostTimer = 0;
       shieldMesh.visible = false; runCoins = 0; currentThemeIndex = 0;
       document.getElementById('coins-count').innerText = `🪙 0`; updateStatusUI();
@@ -500,6 +485,8 @@
     document.getElementById('btn-lobby-play').addEventListener('click', startPlay);
 
     window.addEventListener('resize', () => { camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+    
+    // Controles para teclado
     window.addEventListener('keydown', (e) => { 
       if(currentState !== STATES.PLAYING || e.repeat) return; 
       if(e.code === 'KeyA' || e.code === 'ArrowLeft') controls.left = true; 
@@ -508,15 +495,48 @@
     });
     window.addEventListener('keyup', (e) => { if(e.code==='KeyA'||e.code==='ArrowLeft') controls.left=false; if(e.code==='KeyD'||e.code==='ArrowRight') controls.right=false; });
 
-    const bindBtn = (id, action) => { 
-      const el = document.getElementById(id); 
-      el.addEventListener('touchstart', (e)=>{e.preventDefault();controls[action]=true;}, {passive:false}); el.addEventListener('touchend', (e)=>{e.preventDefault();controls[action]=false;}, {passive:false}); 
-      el.addEventListener('mousedown', ()=>{controls[action]=true;}); el.addEventListener('mouseup', ()=>{controls[action]=false;}); el.addEventListener('mouseleave', ()=>{controls[action]=false;}); 
-    };
-    bindBtn('btn-left', 'left'); bindBtn('btn-right', 'right');
     const jumpAction = () => { if(currentState === STATES.PLAYING && isGrounded) { playerVelY = superJumpTimer>0 ? jumpForce*1.5 : jumpForce; isGrounded = false; playSound('jump'); } };
-    document.getElementById('btn-jump').addEventListener('touchstart', (e)=>{e.preventDefault();jumpAction();}, {passive:false});
-    document.getElementById('btn-jump').addEventListener('mousedown', jumpAction);
+
+    // Controles de arrasto para mobile
+    let touchStartX = 0;
+    let touchStartY = 0;
+
+    window.addEventListener('touchstart', (e) => {
+      if (currentState !== STATES.PLAYING) return;
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    }, { passive: false });
+
+    window.addEventListener('touchmove', (e) => {
+      if (currentState !== STATES.PLAYING) return;
+      e.preventDefault();
+
+      const touchX = e.touches[0].clientX;
+      const touchY = e.touches[0].clientY;
+      const diffX = touchX - touchStartX;
+      const diffY = touchY - touchStartY;
+
+      if (diffX > 15) {
+        controls.right = true;
+        controls.left = false;
+      } else if (diffX < -15) {
+        controls.left = true;
+        controls.right = false;
+      } else {
+        controls.left = false;
+        controls.right = false;
+      }
+
+      if (diffY < -30 && isGrounded) {
+        jumpAction();
+        touchStartY = touchY;
+      }
+    }, { passive: false });
+
+    window.addEventListener('touchend', () => {
+      controls.left = false;
+      controls.right = false;
+    });
 
     function updateStatusUI() {
       const c = document.getElementById('status-effects'); c.innerHTML = '';
