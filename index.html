@@ -47,7 +47,29 @@
     #btn-lobby-skin { pointer-events: auto; position: absolute; bottom: max(20px, env(safe-area-inset-bottom)); left: 20px; }
     #btn-lobby-play { pointer-events: auto; position: absolute; bottom: max(20px, env(safe-area-inset-bottom)); right: 20px; }
     
-    .total-coins { position: absolute; top: max(20px, env(safe-area-inset-top)); right: 20px; font-size: 20px; color: #ffd700; font-weight: bold; text-shadow: 0 0 10px #ffaa00; z-index: 100; }
+    .total-coins { position: absolute; top: max(20px, env(safe-area-inset-top)); right: 70px; font-size: 20px; color: #ffd700; font-weight: bold; text-shadow: 0 0 10px #ffaa00; z-index: 100; }
+
+    .fullscreen-btn {
+      position: absolute;
+      top: max(15px, env(safe-area-inset-top));
+      right: 15px;
+      z-index: 101;
+      background: rgba(0, 0, 0, 0.5);
+      border: 2px solid #00d2d3;
+      color: #fff;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 0 10px rgba(0, 210, 211, 0.5);
+      transition: transform 0.2s;
+    }
+    .fullscreen-btn:active { transform: scale(0.9); }
   </style>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -60,6 +82,7 @@
 </head>
 <body>
 
+  <button id="btn-fullscreen" class="fullscreen-btn" title="Tela Cheia">⛶</button>
   <div class="total-coins" id="global-coins">🪙 0</div>
 
   <div id="start-screen" class="screen">
@@ -99,6 +122,25 @@
   <div id="game-container"></div>
 
   <script>
+    // Sistema de Tela Cheia
+    const fsBtn = document.getElementById('btn-fullscreen');
+    fsBtn.addEventListener('click', () => {
+      if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        const docEl = document.documentElement;
+        if (docEl.requestFullscreen) {
+          docEl.requestFullscreen();
+        } else if (docEl.webkitRequestFullscreen) {
+          docEl.webkitRequestFullscreen();
+        }
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        }
+      }
+    });
+
     function loadData() {
       return {
         highScore: parseInt(localStorage.getItem('wb_highScore')) || 0,
@@ -122,29 +164,25 @@
 
     let gameData = loadData();
 
-    let audioCtx = null, musicInterval = null, noteIndex = 0;
+    // Sistema de Música de Fundo MP3 e Efeitos Sonoros
+    let audioCtx = null;
+    const bgMusic = new Audio('sounds/music.mp3');
+    bgMusic.loop = true;
+    bgMusic.volume = 0.4;
+
     function initAudio() {
       if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       if (audioCtx.state === 'suspended') audioCtx.resume();
     }
+
     function playMusic() {
-      if (!audioCtx) return;
-      stopMusic();
-      const notes = [65.41, 65.41, 73.42, 65.41];
-      musicInterval = setInterval(() => {
-        if(currentState !== STATES.PLAYING) return;
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.value = notes[noteIndex % notes.length];
-        osc.connect(gain); gain.connect(audioCtx.destination);
-        gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
-        osc.start(); osc.stop(audioCtx.currentTime + 0.2);
-        noteIndex++;
-      }, 300);
+      bgMusic.currentTime = 0;
+      bgMusic.play().catch(err => console.log("Aguardando interação do usuário para tocar o áudio.", err));
     }
-    function stopMusic() { if(musicInterval) clearInterval(musicInterval); }
+
+    function stopMusic() {
+      bgMusic.pause();
+    }
 
     function playSound(type) {
       if (!audioCtx || audioCtx.state === 'suspended') return;
