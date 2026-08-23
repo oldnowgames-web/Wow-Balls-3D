@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Wow Balls 3D - Ultimate</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-select: none; touch-action: none; }
+    body, html { width: 100%; height: 100%; overflow: hidden; background-color: #0a0a1a; font-family: 'Orbitron', sans-serif; }
+    #game-container { width: 100%; height: 100%; display: block; }
+
+    .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(10, 10, 26, 0.85); color: white; z-index: 20; backdrop-filter: blur(8px); transition: opacity 0.3s ease; }
+    .hidden { display: none !important; }
+
+    h1 { font-size: 45px; text-transform: uppercase; letter-spacing: 4px; text-shadow: 0 0 15px #ff0055, 0 0 30px #ff0055; margin-bottom: 10px; color: #fff; text-align: center; line-height: 1.1; }
+    h2 { font-size: 26px; margin-bottom: 15px; text-shadow: 0 0 10px #00d2d3; text-align: center; }
+    .subtitle { font-size: 18px; margin-bottom: 20px; color: #00d2d3; }
+
+    .btn-main { padding: 12px 35px; font-size: 20px; font-weight: 900; font-family: 'Orbitron', sans-serif; color: white; background: linear-gradient(45deg, #ff0055, #ff5050); border: 2px solid #fff; border-radius: 30px; cursor: pointer; box-shadow: 0 0 15px #ff0055; margin-top: 15px; transition: all 0.2s; animation: pulseGlow 2s infinite; }
+    .btn-main:active { transform: scale(0.9); }
+    .btn-main:disabled { background: #555; box-shadow: none; border-color: #777; color: #aaa; animation: none; transform: none; }
+    
+    .btn-secondary { padding: 10px 25px; font-size: 16px; font-weight: 700; font-family: 'Orbitron', sans-serif; color: white; background: transparent; border: 2px solid #00d2d3; border-radius: 30px; cursor: pointer; text-shadow: 0 0 5px #000; box-shadow: 0 0 10px rgba(0, 210, 211, 0.5); transition: all 0.2s; }
+    .btn-secondary:active { transform: scale(0.9); }
+    .btn-secondary.active-tab { background: #00d2d3; color: #0a0a1a; text-shadow: none; }
+
+    @keyframes pulseGlow { 0% { box-shadow: 0 0 15px #ff0055; } 50% { box-shadow: 0 0 30px #ff0055, 0 0 10px #fff; } 100% { box-shadow: 0 0 15px #ff0055; } }
+
+    .color-palette { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin: 15px 0; max-width: 90vw; }
+    .color-wrapper { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+    .color-option { width: 45px; height: 45px; border-radius: 50%; border: 3px solid #333; cursor: pointer; transition: all 0.2s; position: relative; display: flex; align-items: center; justify-content: center; }
+    .color-option.selected { transform: scale(1.2); border-color: #fff; box-shadow: 0 0 15px currentColor; z-index: 2; }
+    .color-price { font-size: 11px; font-weight: bold; color: #ffd700; text-align: center; height: 15px; }
+    
+    .shop-tabs { display: flex; gap: 10px; margin-bottom: 15px; }
+
+    #ui { position: absolute; top: max(15px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); color: #ffffff; font-size: 16px; font-weight: bold; pointer-events: none; display: flex; gap: 15px; width: 95%; justify-content: center; align-items: center; flex-wrap: wrap; z-index: 5; text-shadow: 0 0 8px rgba(0,0,0,0.8); }
+    #status-effects { display: flex; gap: 8px; font-size: 12px; }
+    .badge { background: rgba(0,0,0,0.6); padding: 4px 8px; border-radius: 8px; border: 1px solid #fff; }
+
+    .pop-anim { animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.4); color: #ffd700; text-shadow: 0 0 20px #ffd700; } 100% { transform: scale(1); } }
+
+    #ui-controls { position: absolute; bottom: max(20px, env(safe-area-inset-bottom)); left: 0; width: 100%; padding: 0 15px; display: flex; justify-content: space-between; align-items: flex-end; z-index: 10; }
+    .dir-controls { display: flex; gap: 10px; }
+    .btn-ctrl { width: 65px; height: 65px; background: rgba(255, 255, 255, 0.1); border: 2px solid rgba(255,255,255,0.5); border-radius: 16px; color: white; font-size: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(4px); box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+    .btn-ctrl:active { background: rgba(255, 255, 255, 0.4); transform: translateY(2px); }
+    .jump-btn { border-radius: 50%; width: 75px; height: 75px; font-size: 28px; background: rgba(0, 210, 211, 0.15); border-color: rgba(0, 210, 211, 0.7); }
+
+    .lobby-btns { position: absolute; width: 100%; height: 100%; pointer-events: none; }
+    #btn-lobby-skin { pointer-events: auto; position: absolute; bottom: max(20px, env(safe-area-inset-bottom)); left: 20px; }
+    #btn-lobby-play { pointer-events: auto; position: absolute; bottom: max(20px, env(safe-area-inset-bottom)); right: 20px; }
+    
+    .total-coins { position: absolute; top: max(20px, env(safe-area-inset-top)); right: 20px; font-size: 20px; color: #ffd700; font-weight: bold; text-shadow: 0 0 10px #ffaa00; z-index: 100; }
+  </style>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+</head>
+<body>
+
+  <div class="total-coins" id="global-coins">🪙 0</div>
+
+  <div id="start-screen" class="screen">
+    <h1>Wow Balls<br>3d</h1>
+    <div id="start-record" class="subtitle">🏆 Recorde: 0m</div>
+    <button id="btn-start" class="btn-main">Iniciar</button>
+  </div>
+
+  <div id="color-screen" class="screen hidden">
+    <h2>Oficina</h2>
+    <div class="shop-tabs">
+      <button id="tab-colors" class="btn-secondary active-tab">Cores</button>
+      <button id="tab-trails" class="btn-secondary">Rastros</button>
+    </div>
+    <div class="color-palette" id="palette"></div>
+    <button id="btn-color-confirm" class="btn-main">PRONTO</button>
+    <button id="btn-color-back" class="btn-secondary" style="margin-top:10px;">Voltar</button>
+  </div>
+
+  <div id="lobby-screen" class="screen hidden" style="background: transparent; backdrop-filter: none;">
+    <div style="position: absolute; top: 15%; width: 100%; display: flex; flex-direction: column; align-items: center;">
+      <h1>Wow Balls<br>3d</h1>
+      <h2 id="lobby-stats" style="font-size: 22px; text-shadow: 0 0 10px #00d2d3; margin-top: 10px;">🏆 0m</h2>
+    </div>
+    <div class="lobby-btns">
+      <button id="btn-lobby-skin" class="btn-secondary">🛒 Oficina</button>
+      <button id="btn-lobby-play" class="btn-main">Play ▶</button>
+    </div>
+  </div>
+
+  <div id="ui" class="hidden">
+    <div id="score">DIST: 0m</div>
+    <div id="coins-count">🪙 0</div>
+    <div id="status-effects"></div>
+  </div>
+
+  <div id="ui-controls" class="hidden">
+    <div class="dir-controls">
+      <div id="btn-left" class="btn-ctrl">◀</div>
+      <div id="btn-right" class="btn-ctrl">▶</div>
+    </div>
+    <div id="btn-jump" class="btn-ctrl jump-btn">▲</div>
+  </div>
+
+  <div id="game-container"></div>
+
+  <script>
+    function loadData() {
+      return {
+        highScore: parseInt(localStorage.getItem('wb_highScore')) || 0,
+        coins: parseInt(localStorage.getItem('wb_coins')) || 0,
+        unlockedTrails: JSON.parse(localStorage.getItem('wb_unlockedTrails')) || ["normal"],
+        selectedTrail: localStorage.getItem('wb_selectedTrail') || "normal"
+      };
+    }
+    function saveData() {
+      localStorage.setItem('wb_highScore', gameData.highScore);
+      localStorage.setItem('wb_coins', gameData.coins);
+      localStorage.setItem('wb_unlockedTrails', JSON.stringify(gameData.unlockedTrails));
+      localStorage.setItem('wb_selectedTrail', gameData.selectedTrail);
+      updateGlobalUI();
+    }
+    function updateGlobalUI() {
+      document.getElementById('global-coins').innerText = `🪙 ${gameData.coins}`;
+      document.getElementById('start-record').innerText = `🏆 Recorde: ${gameData.highScore}m`;
+      document.getElementById('lobby-stats').innerHTML = `🏆 Recorde: ${gameData.highScore}m`;
+    }
+
+    let gameData = loadData();
+
+    let audioCtx = null, musicInterval = null, noteIndex = 0;
+    function initAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+    function playMusic() {
+      if (!audioCtx) return;
+      stopMusic();
+      const notes = [65.41, 65.41, 73.42, 65.41];
+      musicInterval = setInterval(() => {
+        if(currentState !== STATES.PLAYING) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.value = notes[noteIndex % notes.length];
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+        noteIndex++;
+      }, 300);
+    }
+    function stopMusic() { if(musicInterval) clearInterval(musicInterval); }
+
+    function playSound(type) {
+      if (!audioCtx || audioCtx.state === 'suspended') return;
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        const now = audioCtx.currentTime;
+
+        if (type === 'jump') {
+          osc.type = 'sine'; osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(400, now + 0.15);
+          gain.gain.setValueAtTime(0.2, now); gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
+          osc.start(now); osc.stop(now + 0.15);
+        } else if (type === 'coin') {
+          osc.type = 'triangle'; osc.frequency.setValueAtTime(880, now); osc.frequency.setValueAtTime(1200, now + 0.1);
+          gain.gain.setValueAtTime(0.15, now); gain.gain.linearRampToValueAtTime(0.01, now + 0.1);
+          osc.start(now); osc.stop(now + 0.1);
+        } else if (type === 'shield') {
+          osc.type = 'sine'; osc.frequency.setValueAtTime(300, now); osc.frequency.linearRampToValueAtTime(600, now + 0.4);
+          gain.gain.setValueAtTime(0.2, now); gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
+          osc.start(now); osc.stop(now + 0.4);
+        } else if (type === 'portal') {
+          osc.type = 'square'; osc.frequency.setValueAtTime(400, now); osc.frequency.linearRampToValueAtTime(800, now + 0.5);
+          gain.gain.setValueAtTime(0.1, now); gain.gain.linearRampToValueAtTime(0.01, now + 0.5);
+          osc.start(now); osc.stop(now + 0.5);
+        } else if (type === 'crash') {
+          osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, now); osc.frequency.exponentialRampToValueAtTime(20, now + 0.4);
+          gain.gain.setValueAtTime(0.3, now); gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
+          osc.start(now); osc.stop(now + 0.4);
+        }
+      } catch(e) {}
+    }
+
+    const STATES = { START: 'START', COLOR: 'COLOR', LOBBY: 'LOBBY', PLAYING: 'PLAYING' };
+    let currentState = STATES.START;
+
+    const colorsList = [
+      { hex: 0x00d2d3 }, { hex: 0xff0055 }, { hex: 0x2ed573 },
+      { hex: 0xffa502 }, { hex: 0x9b59b6 }, { hex: 0xffffff },
+      { hex: 0x0088ff }, { hex: 0xff4757 }, { hex: 0x7bed9f },
+      { hex: 0xf1c40f }
+    ];
+    let selectedColor = colorsList[0].hex;
+
+    const trailsList = [
+      { id: "normal", name: "Normal", price: 0, hex: 0xffffff },
+      { id: "fogo", name: "Fogo", price: 150, hex: 0xff6b00 },
+      { id: "neon", name: "Neon", price: 300, hex: 0x00ffcc },
+      { id: "pixel", name: "Pixel", price: 500, hex: 0xbdc581 }
+    ];
+    let activeTab = 'colors';
+
+    const container = document.getElementById('game-container');
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    container.appendChild(renderer.domElement);
+
+    let composer, useBloom = false;
+    try {
+      if (typeof THREE.EffectComposer !== 'undefined') {
+        composer = new THREE.EffectComposer(renderer);
+        composer.addPass(new THREE.RenderPass(scene, camera));
+        composer.addPass(new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85));
+        useBloom = true;
+      }
+    } catch(e) {}
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4); scene.add(ambientLight);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1.2); dirLight.position.set(10, 30, 10); scene.add(dirLight);
+
+    const starGeo = new THREE.BufferGeometry();
+    const starPos = new Float32Array(600 * 3);
+    for(let i=0; i<1800; i++) starPos[i] = (Math.random() - 0.5) * 150;
+    starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+    const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({color: 0x00d2d3, size: 0.3, transparent: true, opacity: 0.6}));
+    scene.add(stars);
+
+    const playerMaterial = new THREE.MeshStandardMaterial({ color: selectedColor, emissive: selectedColor, emissiveIntensity: 0.8 });
+    const player = new THREE.Mesh(new THREE.SphereGeometry(0.6, 32, 32), playerMaterial); scene.add(player);
+    const shieldMesh = new THREE.Mesh(new THREE.SphereGeometry(0.85, 16, 16), new THREE.MeshBasicMaterial({ color: 0x00d2d3, transparent: true, opacity: 0.3, wireframe: true }));
+    shieldMesh.visible = false; player.add(shieldMesh);
+
+    let playerPos = new THREE.Vector3(0, 2, 0), playerVelY = 0, isGrounded = false;
+    const gravity = -30, forwardSpeedBase = 14, strafeSpeed = 16;
+    let currentForwardSpeed = forwardSpeedBase, jumpForce = 12;
+    let hasShield = false, hasMagnet = false, superJumpTimer = 0, boostTimer = 0;
+    let cameraShakeTime = 0, frameCount = 0;
+    let platforms = [], obstacles = [], coins = [], powerups = [], portals = [], particles = [], trailParticles = [];
+    let controls = { left: false, right: false };
+    let runCoins = 0, lastPlatformZ = 25, currentThemeIndex = 0;
+
+    const themes = [
+      { bg: 0x050510, fog: 0x050510, wire: 0x00d2d3, pf1: 0x050810 },
+      { bg: 0x1a0520, fog: 0x1a0520, wire: 0xff00ff, pf1: 0x100315 },
+      { bg: 0x052010, fog: 0x052010, wire: 0x2ed573, pf1: 0x031508 }
+    ];
+
+    function disposeObj(mesh) {
+      if(mesh.geometry) mesh.geometry.dispose();
+      if(mesh.material) { if(Array.isArray(mesh.material)) mesh.material.forEach(m => m.dispose()); else mesh.material.dispose(); }
+      scene.remove(mesh);
+    }
+    function createExplosion(pos, colorHex, count = 15, speed = 15) {
+      for(let i=0; i<count; i++) {
+        const p = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), new THREE.MeshBasicMaterial({color: colorHex}));
+        p.position.copy(pos); scene.add(p);
+        particles.push({ mesh: p, vel: new THREE.Vector3((Math.random()-0.5)*speed, Math.random()*speed, (Math.random()-0.5)*speed), life: 1.0 });
+      }
+    }
+
+    function createPlatform(x, y, z, width, depth, theme, isCrumbling = false) {
+      const mat = new THREE.MeshStandardMaterial({ color: theme.pf1, roughness: 0.8 });
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(width, 1, depth), mat);
+      mesh.position.set(x, y - 0.5, z); scene.add(mesh);
+      
+      const wireColor = isCrumbling ? 0xff4757 : theme.wire;
+      const wireframe = new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry), new THREE.LineBasicMaterial({ color: wireColor, transparent: true, opacity: isCrumbling?0.6:0.3 }));
+      mesh.add(wireframe);
+
+      platforms.push({ mesh, isCrumbling, touchedTimer: 0, bounds: { minX: x - width/2, maxX: x + width/2, topY: y, minZ: z - depth/2, maxZ: z + depth/2 } });
+    }
+    function createObstacle(x, y, z, size) {
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(size, size, size), new THREE.MeshStandardMaterial({ color: 0xff0055, emissive: 0xff0055, emissiveIntensity: 0.6 }));
+      mesh.position.set(x, y + size/2, z); scene.add(mesh);
+      obstacles.push({ mesh, bounds: { minX: x - size/2, maxX: x + size/2, minY: y, maxY: y + size, minZ: z - size/2, maxZ: z + size/2 } });
+    }
+    function createCoin(x, y, z) {
+      const mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.1, 16), new THREE.MeshStandardMaterial({ color: 0xffd700, emissive: 0xffa500, emissiveIntensity: 0.6 }));
+      mesh.rotation.x = Math.PI/2; mesh.position.set(x, y + 0.8, z); scene.add(mesh);
+      coins.push({ mesh, collected: false });
+    }
+    function createPowerup(x, y, z) {
+      const type = Math.floor(Math.random() * 3);
+      const color = type === 0 ? 0x00d2d3 : (type === 1 ? 0x9b59b6 : 0x2ed573);
+      const mesh = new THREE.Mesh(new THREE.OctahedronGeometry(0.45), new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.8 }));
+      mesh.position.set(x, y + 1.2, z); scene.add(mesh);
+      powerups.push({ mesh, type, collected: false });
+    }
+    function createPortal(x, y, z) {
+      const mesh = new THREE.Mesh(new THREE.TorusGeometry(1.5, 0.2, 16, 32), new THREE.MeshStandardMaterial({ color: 0x0088ff, emissive: 0x0088ff, emissiveIntensity: 1 }));
+      mesh.position.set(x, y + 2, z); scene.add(mesh);
+      portals.push({ mesh, active: true });
+    }
+
+    function resetAndStartLevel() {
+      platforms.forEach(p => disposeObj(p.mesh)); obstacles.forEach(o => disposeObj(o.mesh)); 
+      coins.forEach(c => disposeObj(c.mesh)); powerups.forEach(pw => disposeObj(pw.mesh)); 
+      portals.forEach(pt => disposeObj(pt.mesh)); trailParticles.forEach(t => disposeObj(t.mesh));
+      platforms = []; obstacles = []; coins = []; powerups = []; portals = []; trailParticles = [];
+      lastPlatformZ = 25;
+      scene.background = new THREE.Color(themes[currentThemeIndex].bg); scene.fog = new THREE.FogExp2(themes[currentThemeIndex].fog, 0.015);
+      createPlatform(0, 0, 10, 6, 30, themes[currentThemeIndex]);
+      generateChunks(20);
+      playMusic();
+    }
+
+    function generateChunks(count) {
+      const theme = themes[currentThemeIndex];
+      for (let i = 0; i < count; i++) {
+        const hasPortal = Math.random() > 0.9;
+        const gap = hasPortal ? 3 : (4 + Math.random() * 4); 
+        const width = hasPortal ? 6 : (4 + Math.random() * 4);
+        const depth = hasPortal ? 16 : (12 + Math.random() * 12);
+        
+        const offsetX = (Math.random() - 0.5) * 6;
+        lastPlatformZ += gap + depth / 2;
+        
+        const isCrumbling = !hasPortal && Math.random() > 0.85;
+        createPlatform(offsetX, 0, lastPlatformZ, width, depth, theme, isCrumbling);
+        
+        if (hasPortal) createPortal(offsetX, 0, lastPlatformZ - 2);
+        else if (Math.random() > 0.4 && !isCrumbling) createObstacle(offsetX + (Math.random()-0.5)*(width-1.5), 0, lastPlatformZ, 1.2);
+        else if (Math.random() > 0.3) createCoin(offsetX + (Math.random()-0.5)*(width-1), 0, lastPlatformZ);
+        else if (Math.random() > 0.85) createPowerup(offsetX, 0, lastPlatformZ);
+        lastPlatformZ += depth / 2;
+      }
+    }
+
+    function cleanupLevel() {
+      const limitZ = playerPos.z - 30;
+      platforms = platforms.filter(p => { if (p.mesh.position.z < limitZ) { disposeObj(p.mesh); return false; } return true; });
+      obstacles = obstacles.filter(o => { if (o.mesh.position.z < limitZ) { disposeObj(o.mesh); return false; } return true; });
+      coins = coins.filter(c => { if (c.mesh.position.z < limitZ) { disposeObj(c.mesh); return false; } return true; });
+      powerups = powerups.filter(pw => { if (pw.mesh.position.z < limitZ) { disposeObj(pw.mesh); return false; } return true; });
+      portals = portals.filter(pt => { if (pt.mesh.position.z < limitZ) { disposeObj(pt.mesh); return false; } return true; });
+    }
+
+    function gameOver() {
+      playSound('crash'); stopMusic();
+      createExplosion(playerPos, 0xffffff, 30, 25);
+      cameraShakeTime = 0.4;
+      
+      const dist = Math.floor(playerPos.z);
+      if (dist > gameData.highScore) gameData.highScore = dist;
+      gameData.coins += runCoins;
+      saveData();
+      
+      document.getElementById('ui').classList.add('hidden');
+      document.getElementById('ui-controls').classList.add('hidden');
+      document.getElementById('lobby-screen').classList.remove('hidden');
+      currentState = STATES.LOBBY;
+    }
+
+    updateGlobalUI();
+    const paletteEl = document.getElementById('palette');
+    
+    document.getElementById('tab-colors').addEventListener('click', () => {
+      activeTab = 'colors';
+      document.getElementById('tab-colors').classList.add('active-tab');
+      document.getElementById('tab-trails').classList.remove('active-tab');
+      renderShop();
+    });
+    
+    document.getElementById('tab-trails').addEventListener('click', () => {
+      activeTab = 'trails';
+      document.getElementById('tab-trails').classList.add('active-tab');
+      document.getElementById('tab-colors').classList.remove('active-tab');
+      renderShop();
+    });
+
+    function renderShop() {
+      paletteEl.innerHTML = '';
+      
+      if (activeTab === 'colors') {
+        colorsList.forEach((item) => {
+          const wrap = document.createElement('div'); wrap.className = 'color-wrapper';
+          const opt = document.createElement('div');
+          const isSelected = selectedColor === item.hex;
+          
+          opt.className = 'color-option' + (isSelected ? ' selected' : '');
+          opt.style.backgroundColor = '#' + item.hex.toString(16).padStart(6, '0');
+          
+          opt.addEventListener('click', () => {
+            document.querySelectorAll('.color-option').forEach(el => el.classList.remove('selected'));
+            opt.classList.add('selected'); 
+            selectedColor = item.hex;
+            playerMaterial.color.setHex(selectedColor); 
+            playerMaterial.emissive.setHex(selectedColor);
+          });
+          
+          wrap.appendChild(opt);
+          const priceDiv = document.createElement('div'); priceDiv.className = 'color-price';
+          wrap.appendChild(priceDiv);
+          paletteEl.appendChild(wrap);
+        });
+      } else {
+        trailsList.forEach((item) => {
+          const wrap = document.createElement('div'); wrap.className = 'color-wrapper';
+          const opt = document.createElement('div');
+          const isUnlocked = gameData.unlockedTrails.includes(item.id);
+          const isSelected = gameData.selectedTrail === item.id;
+          
+          opt.className = 'color-option' + (isSelected ? ' selected' : '');
+          opt.style.borderRadius = '10px';
+          opt.style.backgroundColor = '#' + item.hex.toString(16).padStart(6, '0');
+          opt.style.boxShadow = `0 0 10px #${item.hex.toString(16).padStart(6, '0')}`;
+          
+          opt.addEventListener('click', () => {
+            if (isUnlocked) {
+              gameData.selectedTrail = item.id;
+              saveData();
+              renderShop();
+            } else {
+              if (gameData.coins >= item.price) {
+                gameData.coins -= item.price;
+                gameData.unlockedTrails.push(item.id);
+                gameData.selectedTrail = item.id;
+                saveData();
+                renderShop();
+                playSound('coin');
+              } else {
+                playSound('crash');
+              }
+            }
+          });
+          
+          wrap.appendChild(opt);
+          
+          const priceDiv = document.createElement('div');
+          priceDiv.className = 'color-price';
+          if (isSelected) {
+            priceDiv.style.color = '#2ed573';
+            priceDiv.innerText = 'USANDO';
+          } else if (isUnlocked) {
+            priceDiv.style.color = '#00d2d3';
+            priceDiv.innerText = 'ESCOLHER';
+          } else {
+            priceDiv.style.color = '#ffd700';
+            priceDiv.innerText = `🪙 ${item.price}`;
+          }
+          wrap.appendChild(priceDiv);
+          paletteEl.appendChild(wrap);
+        });
+      }
+      
+      const btn = document.getElementById('btn-color-confirm');
+      btn.innerText = 'PRONTO'; 
+      btn.onclick = () => {
+        document.getElementById('color-screen').classList.add('hidden');
+        if (currentState === STATES.COLOR) {
+          document.getElementById('lobby-screen').classList.remove('hidden');
+          currentState = STATES.LOBBY;
+        } else {
+          startPlay();
+        }
+      };
+    }
+
+    document.getElementById('btn-start').addEventListener('click', () => {
+      initAudio(); 
+      document.getElementById('start-screen').classList.add('hidden');
+      document.getElementById('color-screen').classList.remove('hidden'); 
+      renderShop();
+      currentState = STATES.COLOR;
+    });
+
+    document.getElementById('btn-lobby-skin').addEventListener('click', () => {
+      document.getElementById('lobby-screen').classList.add('hidden');
+      document.getElementById('color-screen').classList.remove('hidden'); renderShop();
+      currentState = STATES.COLOR;
+    });
+
+    document.getElementById('btn-color-back').addEventListener('click', () => {
+      document.getElementById('color-screen').classList.add('hidden');
+      document.getElementById('lobby-screen').classList.remove('hidden'); currentState = STATES.LOBBY;
+    });
+
+    function startPlay() {
+      initAudio(); document.getElementById('lobby-screen').classList.add('hidden');
+      document.getElementById('ui').classList.remove('hidden'); document.getElementById('ui-controls').classList.remove('hidden');
+      playerPos.set(0, 2, 0); playerVelY = 0; hasShield = false; hasMagnet = false; superJumpTimer = 0; boostTimer = 0;
+      shieldMesh.visible = false; runCoins = 0; currentThemeIndex = 0;
+      document.getElementById('coins-count').innerText = `🪙 0`; updateStatusUI();
+      resetAndStartLevel(); currentState = STATES.PLAYING;
+    }
+    document.getElementById('btn-lobby-play').addEventListener('click', startPlay);
+
+    window.addEventListener('resize', () => { camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+    window.addEventListener('keydown', (e) => { 
+      if(currentState !== STATES.PLAYING || e.repeat) return; 
+      if(e.code === 'KeyA' || e.code === 'ArrowLeft') controls.left = true; 
+      if(e.code === 'KeyD' || e.code === 'ArrowRight') controls.right = true; 
+      if((e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') && isGrounded) jumpAction();
+    });
+    window.addEventListener('keyup', (e) => { if(e.code==='KeyA'||e.code==='ArrowLeft') controls.left=false; if(e.code==='KeyD'||e.code==='ArrowRight') controls.right=false; });
+
+    const bindBtn = (id, action) => { 
+      const el = document.getElementById(id); 
+      el.addEventListener('touchstart', (e)=>{e.preventDefault();controls[action]=true;}, {passive:false}); el.addEventListener('touchend', (e)=>{e.preventDefault();controls[action]=false;}, {passive:false}); 
+      el.addEventListener('mousedown', ()=>{controls[action]=true;}); el.addEventListener('mouseup', ()=>{controls[action]=false;}); el.addEventListener('mouseleave', ()=>{controls[action]=false;}); 
+    };
+    bindBtn('btn-left', 'left'); bindBtn('btn-right', 'right');
+    const jumpAction = () => { if(currentState === STATES.PLAYING && isGrounded) { playerVelY = superJumpTimer>0 ? jumpForce*1.5 : jumpForce; isGrounded = false; playSound('jump'); } };
+    document.getElementById('btn-jump').addEventListener('touchstart', (e)=>{e.preventDefault();jumpAction();}, {passive:false});
+    document.getElementById('btn-jump').addEventListener('mousedown', jumpAction);
+
+    function updateStatusUI() {
+      const c = document.getElementById('status-effects'); c.innerHTML = '';
+      if (hasShield) c.innerHTML += `<div class="badge">🛡️ Escudo</div>`;
+      if (hasMagnet) c.innerHTML += `<div class="badge">🧲 Ímã</div>`;
+      if (superJumpTimer > 0) c.innerHTML += `<div class="badge">🦘 Pulo</div>`;
+      if (boostTimer > 0) c.innerHTML += `<div class="badge" style="color:#0088ff;border-color:#0088ff">⚡ Boost</div>`;
+    }
+
+    const clock = new THREE.Clock();
+    function animate() {
+      requestAnimationFrame(animate);
+      const delta = Math.min(clock.getDelta(), 0.1); frameCount++; const time = clock.getElapsedTime();
+
+      if (currentState !== STATES.PLAYING) {
+        playerPos.set(0, 1.2, 0); player.position.copy(playerPos); 
+        player.rotation.x += 1.5*delta; player.rotation.y += 2*delta; 
+        stars.position.z = 0; stars.position.y = 0; camera.position.set(0, 2, -5); camera.lookAt(0, 1.2, 0);
+      } 
+      else {
+        let baseSpeed = forwardSpeedBase + Math.floor(playerPos.z / 150) * 0.8;
+        if (boostTimer > 0) { 
+          baseSpeed *= 1.4; 
+          boostTimer -= delta; 
+          if(boostTimer<=0) updateStatusUI(); 
+        }
+        currentForwardSpeed = baseSpeed;
+
+        let newThemeIndex = Math.floor(playerPos.z / 500) % themes.length;
+        if (newThemeIndex !== currentThemeIndex) { currentThemeIndex = newThemeIndex; scene.background.setHex(themes[currentThemeIndex].bg); scene.fog.color.setHex(themes[currentThemeIndex].fog); }
+
+        if (lastPlatformZ - playerPos.z < 100) generateChunks(10);
+        if (frameCount % 60 === 0) cleanupLevel();
+        if (superJumpTimer > 0) { superJumpTimer -= delta; if(superJumpTimer<=0) updateStatusUI(); }
+
+        let frameDist = currentForwardSpeed * delta;
+        playerPos.z += frameDist;
+
+        let moveX = 0; if (controls.left) moveX += 1; if (controls.right) moveX -= 1;
+        playerPos.x += moveX * strafeSpeed * delta; playerPos.x = THREE.MathUtils.clamp(playerPos.x, -8, 8);
+        playerVelY += gravity * delta; playerPos.y += playerVelY * delta;
+
+        if(frameCount % 2 === 0) {
+          let tColor = selectedColor;
+          let geom = new THREE.SphereGeometry(0.5, 8, 8);
+          
+          if (gameData.selectedTrail === 'fogo') {
+            tColor = Math.random() > 0.5 ? 0xff6b00 : 0xffcc00;
+          } else if (gameData.selectedTrail === 'neon') {
+            const neonColors = [0x00ffcc, 0xff00ff, 0x00ffff, 0xffff00];
+            tColor = neonColors[Math.floor(Math.random() * neonColors.length)];
+          } else if (gameData.selectedTrail === 'pixel') {
+            tColor = 0xbdc581;
+            geom = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+          }
+
+          if(boostTimer > 0) tColor = 0x0088ff; 
+          else if(superJumpTimer > 0) tColor = 0x2ed573;
+          
+          const trail = new THREE.Mesh(geom, new THREE.MeshBasicMaterial({ color: tColor, transparent: true, opacity: 0.6 }));
+          trail.position.copy(playerPos); 
+          if (gameData.selectedTrail === 'pixel') {
+            trail.rotation.set(Math.random()*Math.PI, Math.random()*Math.PI, 0);
+          }
+          scene.add(trail); 
+          trailParticles.push({ mesh: trail, life: 1.0 });
+        }
+
+        camera.fov += ((boostTimer>0 ? 80 : (isGrounded ? 60 : 75)) - camera.fov) * 5 * delta; camera.updateProjectionMatrix();
+
+        isGrounded = false;
+        for (let p of platforms) {
+          const b = p.bounds;
+          if (playerPos.x+0.6 > b.minX && playerPos.x-0.6 < b.maxX && playerPos.z+0.6 > b.minZ && playerPos.z-0.6 < b.maxZ) {
+            if (playerPos.y-0.6 <= b.topY && playerPos.y-0.6 >= b.topY-0.6 && playerVelY <= 0) {
+              playerPos.y = b.topY+0.6; playerVelY = 0; isGrounded = true; 
+              if (p.isCrumbling && p.touchedTimer === 0) p.touchedTimer = 0.01;
+            }
+          }
+          if(p.touchedTimer > 0) {
+            p.touchedTimer += delta;
+            if(p.touchedTimer > 0.5) p.mesh.position.y -= delta * 15;
+          }
+        }
+
+        for (let o of obstacles) {
+          o.mesh.material.emissiveIntensity = 0.4 + Math.sin(time*8)*0.2;
+          const b = o.bounds;
+          if (playerPos.x+0.6 > b.minX && playerPos.x-0.6 < b.maxX && playerPos.y+0.6 > b.minY && playerPos.y-0.6 < b.maxY && playerPos.z+0.6 > b.minZ && playerPos.z-0.6 < b.maxZ) {
+            if (hasShield) { createExplosion(o.mesh.position, 0x00d2d3, 10, 10); disposeObj(o.mesh); obstacles = obstacles.filter(x => x !== o); hasShield = false; shieldMesh.visible = false; updateStatusUI(); playSound('shield'); } 
+            else gameOver();
+          }
+        }
+
+        for (let pt of portals) {
+          if(!pt.active) continue;
+          pt.mesh.rotation.z += 2 * delta; pt.mesh.scale.set(1+Math.sin(time*5)*0.1, 1+Math.sin(time*5)*0.1, 1);
+          if (Math.abs(playerPos.z - pt.mesh.position.z) < 1.5 && Math.abs(playerPos.x - pt.mesh.position.x) < 2) {
+            pt.active = false; pt.mesh.visible = false; boostTimer = 2.5; updateStatusUI(); playSound('portal'); createExplosion(pt.mesh.position, 0x0088ff, 20, 20);
+          }
+        }
+
+        for (let c of coins) {
+          if (c.collected) continue; c.mesh.rotation.y += 3 * delta; c.mesh.position.y += Math.sin(time*4 + c.mesh.position.x) * 0.005;
+          if (hasMagnet && Math.abs(playerPos.z - c.mesh.position.z) < 8) {
+            const dir = playerPos.clone().sub(c.mesh.position).normalize(); c.mesh.position.add(dir.multiplyScalar(20 * delta));
+          }
+          if (playerPos.distanceTo(c.mesh.position) < 1.4) {
+            c.collected = true; c.mesh.visible = false; runCoins++; playSound('coin'); 
+            const el = document.getElementById('coins-count'); el.innerText = `🪙 ${runCoins}`;
+            el.classList.remove('pop-anim'); void el.offsetWidth; el.classList.add('pop-anim');
+            createExplosion(c.mesh.position, 0xffd700, 5, 8);
+          }
+        }
+
+        for (let pw of powerups) {
+          if (pw.collected) continue; pw.mesh.rotation.x += 2*delta; pw.mesh.rotation.y += 2*delta;
+          if (playerPos.distanceTo(pw.mesh.position) < 1.5) {
+            pw.collected = true; pw.mesh.visible = false; playSound('shield');
+            if (pw.type === 0) { hasShield = true; shieldMesh.visible = true; createExplosion(playerPos, 0x00d2d3, 10, 10); } 
+            else if (pw.type === 1) { hasMagnet = true; setTimeout(() => { hasMagnet=false; updateStatusUI(); }, 8000); createExplosion(playerPos, 0x9b59b6, 10, 10); } 
+            else { superJumpTimer = 8; createExplosion(playerPos, 0x2ed573, 10, 10); }
+            updateStatusUI();
+          }
+        }
+
+        if (playerPos.y < -15) gameOver();
+
+        player.position.copy(playerPos);
+        player.rotation.x -= (currentForwardSpeed/0.6) * delta;
+        if (moveX !== 0) player.rotation.z += (moveX*strafeSpeed/0.6) * delta;
+        shieldMesh.rotation.y += 2*delta; shieldMesh.rotation.x += delta;
+
+        stars.position.z = playerPos.z - 50; stars.position.y = playerPos.y + 20;
+
+        let camTargetX = playerPos.x * 0.5, camTargetY = Math.max(playerPos.y + 4, 4), camTargetZ = playerPos.z - 6;
+        let shake = new THREE.Vector3(0,0,0);
+        if (cameraShakeTime > 0) { cameraShakeTime -= delta; shake.set((Math.random()-0.5)*0.5, (Math.random()-0.5)*0.5, 0); }
+        camera.position.lerp(new THREE.Vector3(camTargetX, camTargetY, camTargetZ), 10 * delta); camera.position.add(shake);
+        camera.lookAt(playerPos.x * 0.8, playerPos.y, playerPos.z + 10);
+
+        document.getElementById('score').innerText = `DIST: ${Math.floor(playerPos.z)}m`;
+      }
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i]; p.mesh.position.addScaledVector(p.vel, delta); p.life -= delta * 2;
+        p.mesh.scale.setScalar(p.life);
+        if (p.life <= 0) { disposeObj(p.mesh); particles.splice(i, 1); }
+      }
+      for (let i = trailParticles.length - 1; i >= 0; i--) {
+        const t = trailParticles[i]; t.life -= delta * 3;
+        t.mesh.scale.setScalar(t.life); t.mesh.material.opacity = t.life * 0.6;
+        if (t.life <= 0) { disposeObj(t.mesh); trailParticles.splice(i, 1); }
+      }
+
+      if (useBloom) composer.render(); else renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+</html>
